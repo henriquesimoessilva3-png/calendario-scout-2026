@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calendário Scout 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;background:#f5f4f0;color:#1a1a18}
+.app{min-height:100vh}
+.nav{display:flex;gap:2px;padding:8px 12px;background:#2c2c2a;flex-wrap:wrap}
+.nav-btn{padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.nav-btn:hover{opacity:.85}
+.nav-btn.active{outline:2px solid rgba(255,255,255,.5);outline-offset:1px}
+.view{display:none;padding:0}
+.view.active{display:block}
+.toolbar{padding:10px 12px;background:#fff;border-bottom:0.5px solid #e0ded4;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.toolbar h1{font-size:15px;font-weight:500;color:#1a1a18}
+.toolbar p{font-size:11px;color:#888780}
+.legend{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:#5f5e5a}
+.leg-dot{width:12px;height:10px;border-radius:2px}
+.scroll-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
+table.cal{border-collapse:collapse;font-size:11px;min-width:900px;width:100%}
+.cal th,.cal td{border:0.5px solid #e0ded4}
+.cal .col-name{position:sticky;left:0;z-index:2;background:#fff;min-width:200px;max-width:240px;padding:4px 6px 4px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal .col-start,.cal .col-end{min-width:70px;padding:3px 5px;text-align:center;background:#ebf4fd;color:#0a3d6b;font-size:10px}
+.cal .col-s{min-width:82px;padding:2px 3px;text-align:center}
+.cal .col-s select{width:100%;border:none;background:transparent;font-size:10px;cursor:pointer;color:#1a1a18;padding:1px}
+.cal .period{width:20px;min-width:20px;height:22px;text-align:center;vertical-align:middle;font-size:7px;font-weight:500;cursor:default;padding:0}
+.cal .period.active{color:#fff}
+.cal .period.month-end{border-right:1.5px solid #b4b2a9!important}
+.row-group td{background:#a8d468;color:#1b4d06;font-weight:500;font-size:10px;padding:5px 8px;border-top:2px solid #5a5855!important}
+.row-group.g-brasil-base td{background:#5dcaa5;color:#04342c}
+.row-group.g-sa-pro td{background:#4ba0e0;color:#042c53}
+.row-group.g-sa-base td{background:#9a8ee0;color:#26215c}
+.row-group.g-mundo td{background:#e07090;color:#4a0c28}
+.row-sg td{font-size:10px;padding:3px 8px 3px 20px;color:#5f5e5a;background:#f5f5f0}
+.cal tr.data:hover .col-name{background:#f0eeea}
+.cal tr.data:nth-child(even) .col-name{background:#f9f8f4}
+.inactive-cell{background:#eeecea}
+.inactive-cell:nth-child(odd){background:#f4f3ec}
+.period.multi{background:#2c2c2a!important}
+th.month-hdr{text-align:center;font-weight:500;font-size:10px;padding:4px;background:#d8d6cc;height:27px}
+th.month-hdr:nth-child(even){background:#e4e2d8}
+th.period-hdr{font-size:7px;color:#888780;background:#eeecea;padding:2px 0;text-align:center;width:20px;min-width:20px;overflow:hidden}
+th.period-hdr:nth-child(even){background:#f4f3ec}
+th.hdr-name{background:#2c2c2a;color:#f1efe8;font-weight:500;padding:5px 8px;text-align:left;position:sticky;left:0;z-index:3}
+th.hdr-col{background:#2c2c2a;color:#f1efe8;font-weight:500;padding:5px 4px;text-align:center;font-size:10px}
+.level-pro{background:#eaf3de;color:#27500a;border-radius:3px;padding:2px 5px}
+.level-base{background:#e6f1fb;color:#0c447c;border-radius:3px;padding:2px 5px}
+.empty-state{padding:40px;text-align:center;color:#888780;font-size:13px}
+.resumo-wrap{padding:12px;overflow-x:auto}
+.resumo-table{border-collapse:collapse;font-size:11px;min-width:700px}
+.resumo-table th,.resumo-table td{border:0.5px solid #e0ded4;padding:5px 7px;text-align:center}
+.resumo-table .r-scout{text-align:left;padding:6px 10px;font-weight:500;font-size:12px;min-width:130px;color:#fff}
+.resumo-table .r-val{font-size:13px;font-weight:500}
+.resumo-table .r-pro{background:#eaf3de;color:#27500a}
+.resumo-table .r-base{background:#e6f1fb;color:#0c447c}
+.resumo-table .r-total{background:#e8e6dc;font-weight:500;font-size:13px}
+.resumo-table .m-hdr{background:#d8d6cc;font-weight:500}
+.resumo-table .m-hdr:nth-child(even){background:#e4e2d8}
+.resumo-table .sub-hdr{font-size:9px;color:#5f5e5a;background:#f0eee8;font-weight:500}
+.resumo-table .r-grand{background:#2c2c2a;color:#f1efe8;font-weight:500}
+.save-badge{font-size:10px;color:#888780;padding:3px 8px;border-radius:4px;background:#f0eeea}
+.sv-name{padding:4px 8px;font-size:12px;color:#1a1a18;min-width:220px;border:0.5px solid #e0ded4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+.sv-col{padding:4px 6px;font-size:11px;color:#5f5e5a;border:0.5px solid #e0ded4;text-align:center;white-space:nowrap}
+.sv-dates{color:#0a3d6b;font-size:10px}
+.sv-mhdr{text-align:center;font-weight:500;font-size:10px;padding:4px 2px;background:#d8d6cc;height:27px}
+.sv-mhdr:nth-child(even){background:#e4e2d8}
+.sv-phdr{font-size:7px;color:#888780;background:#eeecea;padding:2px 0;text-align:center;width:20px;min-width:20px;overflow:hidden}
+.sv-phdr:nth-child(even){background:#f4f3ec}
+.date-input{border:1px solid #e0ded4;border-radius:4px;padding:2px 4px;font-size:10px;width:68px;text-align:center}
+.cal thead tr:first-child th{position:sticky;top:0;z-index:4}
+.cal thead tr:nth-child(2) th{position:sticky;z-index:4}
+.cal thead tr:first-child .hdr-name{position:sticky;left:0;top:0;z-index:6}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="nav" id="nav"></nav>
+<div id="views"></div>
+</div>
+
+<script>
+const MONTHS=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MONTHS_FULL=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const SCOUTS=['Brunno','Cristian','Gabriel','Humberto'];
+const SCOUT_COLORS={
+  Brunno:{soft:'#F5C86A',strong:'#D07000',text:'#7A3D00',btn:'#E8940A'},
+  Cristian:{soft:'#90C4F0',strong:'#1562B8',text:'#042C53',btn:'#1562B8'},
+  Gabriel:{soft:'#8ED4A4',strong:'#1A8038',text:'#04342C',btn:'#1A8038'},
+  Humberto:{soft:'#C4A4E8',strong:'#7030A8',text:'#26215C',btn:'#7030A8'}
+};
+const MULTI_COLOR='#2c2c2a';
+const ALT=['#eeece9','#f4f3ec'];
+const GROUP_CLASSES={
+  'BRASIL':'','BRASIL BASE':'g-brasil-base',
+  'AMERICA DO SUL PRO':'g-sa-pro','AMERICA DO SUL BASE':'g-sa-base',
+  'AMERICAS MUNDO':'g-mundo'
+};
+const GROUP_LABELS={
+  'BRASIL':'Brasil','BRASIL BASE':'Brasil — Base',
+  'AMERICA DO SUL PRO':'América do Sul — Pro','AMERICA DO SUL BASE':'América do Sul — Base',
+  'AMERICAS MUNDO':'Américas / Mundo'
+};
+
+const PERIODS=[];
+for(let m=0;m<12;m++){
+  const days=[10,20,new Date(2026,m+1,0).getDate()];
+  const starts=[1,11,21];
+  for(let p=0;p<3;p++) PERIODS.push({m,p,label:p===0?'1':p===1?'11':'21',
+    start:new Date(2026,m,starts[p]),
+    end:new Date(2026,m,days[p])});
+}
+
+let DATA=[{"id": 0, "group": "BRASIL", "subgroup": "Profissional", "name": "Brasileiro Série A", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-12-31", "scouts": []}, {"id": 1, "group": "BRASIL", "subgroup": "Profissional", "name": "Brasileiro Série B", "country": "Brasil", "level": "Profissional", "start": "2026-03-01", "end": "2026-11-30", "scouts": []}, {"id": 2, "group": "BRASIL", "subgroup": "Profissional", "name": "Brasileiro Série C", "country": "Brasil", "level": "Profissional", "start": "2026-04-01", "end": "2026-10-31", "scouts": []}, {"id": 3, "group": "BRASIL", "subgroup": "Profissional", "name": "Brasileiro Série D", "country": "Brasil", "level": "Profissional", "start": "2026-04-01", "end": "2026-09-30", "scouts": []}, {"id": 4, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Gaúcho", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 5, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Gaúcho A2", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 6, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Catarinense", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 7, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Catarinense A2", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 8, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Paranaense", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 9, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Paranaense A2", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 10, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Carioca", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 11, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Carioca A2", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 12, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Paulista", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 13, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Paulista A2", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 14, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Mineiro", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 15, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Baiano", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 16, "group": "BRASIL", "subgroup": "Profissional", "name": "Campeonato Goiano", "country": "Brasil", "level": "Profissional", "start": "2026-01-01", "end": "2026-03-31", "scouts": []}, {"id": 17, "group": "BRASIL", "subgroup": "Profissional", "name": "Copa Verde", "country": "Brasil", "level": "Profissional", "start": "2026-03-01", "end": "2026-06-30", "scouts": []}, {"id": 18, "group": "BRASIL", "subgroup": "Profissional", "name": "Copa Sul-Sudeste", "country": "Brasil", "level": "Profissional", "start": "2026-03-01", "end": "2026-06-30", "scouts": []}, {"id": 19, "group": "BRASIL", "subgroup": "Profissional", "name": "Copa do Nordeste", "country": "Brasil", "level": "Profissional", "start": "2026-03-01", "end": "2026-06-30", "scouts": []}, {"id": 20, "group": "BRASIL", "subgroup": "Profissional", "name": "Copa RS", "country": "Brasil", "level": "Profissional", "start": "2026-05-01", "end": "2026-07-31", "scouts": []}, {"id": 21, "group": "BRASIL", "subgroup": "Profissional", "name": "Copa Rio", "country": "Brasil", "level": "Profissional", "start": "2026-06-01", "end": "2026-09-30", "scouts": []}, {"id": 22, "group": "BRASIL", "subgroup": "Profissional", "name": "Copa Paulista", "country": "Brasil", "level": "Profissional", "start": "2026-02-01", "end": "2026-05-31", "scouts": []}, {"id": 23, "group": "BRASIL", "subgroup": "Profissional", "name": "Copa Santa Catarina", "country": "Brasil", "level": "Profissional", "start": "2026-09-01", "end": "2026-11-30", "scouts": []}, {"id": 24, "group": "BRASIL", "subgroup": "Profissional", "name": "Copa do Brasil", "country": "Brasil", "level": "Profissional", "start": "2026-02-01", "end": "2026-12-31", "scouts": []}, {"id": 25, "group": "BRASIL", "subgroup": "Profissional", "name": "Supercopa do Brasil", "country": "Brasil", "level": "Profissional", "start": "2026-02-01", "end": "2026-02-28", "scouts": []}, {"id": 26, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Brasileiro U20 A", "country": "Brasil", "level": "Base", "start": "2026-02-01", "end": "2026-09-30", "scouts": []}, {"id": 27, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Brasileiro U20 B", "country": "Brasil", "level": "Base", "start": "2026-04-01", "end": "2026-09-30", "scouts": []}, {"id": 28, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Brasileiro U17", "country": "Brasil", "level": "Base", "start": "2026-02-01", "end": "2026-05-31", "scouts": []}, {"id": 29, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Copa do Brasil U20", "country": "Brasil", "level": "Base", "start": "2026-09-01", "end": "2026-12-31", "scouts": []}, {"id": 30, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Copa do Brasil U17", "country": "Brasil", "level": "Base", "start": "2026-02-01", "end": "2026-05-31", "scouts": []}, {"id": 31, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Copa Santiago RS U17", "country": "Brasil", "level": "Base", "start": "2026-01-01", "end": "2026-01-31", "scouts": []}, {"id": 32, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Copa São Paulo U20", "country": "Brasil", "level": "Base", "start": "2026-01-01", "end": "2026-01-31", "scouts": []}, {"id": 33, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "EFIPAN U15", "country": "Brasil", "level": "Base", "start": "2026-01-01", "end": "2026-01-31", "scouts": []}, {"id": 34, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Copa Sul U20", "country": "Brasil", "level": "Base", "start": "2026-04-01", "end": "2026-12-31", "scouts": []}, {"id": 35, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Copa Sul U17", "country": "Brasil", "level": "Base", "start": "2026-04-01", "end": "2026-12-31", "scouts": []}, {"id": 36, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Copa Gramado U16", "country": "Brasil", "level": "Base", "start": "2026-10-01", "end": "2026-10-31", "scouts": []}, {"id": 37, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Gaúcho U20", "country": "Brasil", "level": "Base", "start": "2026-03-01", "end": "2026-07-31", "scouts": []}, {"id": 38, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Gaúcho U20 A2", "country": "Brasil", "level": "Base", "start": "2026-05-01", "end": "2026-08-31", "scouts": []}, {"id": 39, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Gaúcho U17", "country": "Brasil", "level": "Base", "start": "2026-03-01", "end": "2026-06-30", "scouts": []}, {"id": 40, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Gaúcho U17 A2", "country": "Brasil", "level": "Base", "start": "2026-07-01", "end": "2026-11-30", "scouts": []}, {"id": 41, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Liga Serrana U19", "country": "Brasil", "level": "Base", "start": "2026-02-01", "end": "2026-12-31", "scouts": []}, {"id": 42, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Catarinense U20", "country": "Brasil", "level": "Base", "start": "2026-04-01", "end": "2026-08-31", "scouts": []}, {"id": 43, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Catarinense U21", "country": "Brasil", "level": "Base", "start": "2026-02-01", "end": "2026-04-30", "scouts": []}, {"id": 44, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Catarinense U17", "country": "Brasil", "level": "Base", "start": "2026-03-01", "end": "2026-08-31", "scouts": []}, {"id": 45, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Copa Santa Catarina U20", "country": "Brasil", "level": "Base", "start": "2026-09-01", "end": "2026-11-30", "scouts": []}, {"id": 46, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Carioca U20", "country": "Brasil", "level": "Base", "start": "2026-05-01", "end": "2026-08-31", "scouts": []}, {"id": 47, "group": "BRASIL BASE", "subgroup": "Sub / Base", "name": "Campeonato Paulista U20", "country": "Brasil", "level": "Base", "start": "2026-04-01", "end": "2026-11-30", "scouts": []}, {"id": 48, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Uruguaio", "country": "Uruguai", "level": "Profissional", "start": "2026-02-01", "end": "2026-12-31", "scouts": []}, {"id": 49, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Uruguaio 2a", "country": "Uruguai", "level": "Profissional", "start": "2026-02-01", "end": "2026-12-31", "scouts": []}, {"id": 50, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Torneo de Verano", "country": "Uruguai", "level": "Profissional", "start": "2026-01-01", "end": "2026-01-31", "scouts": []}, {"id": 51, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Argentino", "country": "Argentina", "level": "Profissional", "start": "2026-01-01", "end": "2026-12-31", "scouts": []}, {"id": 52, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Argentino 2a", "country": "Argentina", "level": "Profissional", "start": "2026-02-01", "end": "2026-11-30", "scouts": []}, {"id": 53, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Torneo Proyección", "country": "Argentina", "level": "Profissional", "start": "2026-01-01", "end": "2026-12-31", "scouts": []}, {"id": 54, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Colombiano", "country": "Colômbia", "level": "Profissional", "start": "2026-01-01", "end": "2026-12-31", "scouts": []}, {"id": 55, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Colombiano 2a", "country": "Colômbia", "level": "Profissional", "start": "2026-01-01", "end": "2026-11-30", "scouts": []}, {"id": 56, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Equatoriano", "country": "Equador", "level": "Profissional", "start": "2026-02-01", "end": "2026-11-30", "scouts": []}, {"id": 57, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Equatoriano 2a", "country": "Equador", "level": "Profissional", "start": "2026-02-01", "end": "2026-11-30", "scouts": []}, {"id": 58, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Paraguaio", "country": "Paraguai", "level": "Profissional", "start": "2026-01-01", "end": "2026-12-31", "scouts": []}, {"id": 59, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Chileno", "country": "Chile", "level": "Profissional", "start": "2026-01-01", "end": "2026-12-31", "scouts": []}, {"id": 60, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Campeonato Chileno 2a", "country": "Chile", "level": "Profissional", "start": "2026-02-01", "end": "2026-11-30", "scouts": []}, {"id": 61, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Copa Libertadores da América", "country": "América do Sul", "level": "Profissional", "start": "2026-02-01", "end": "2026-11-30", "scouts": []}, {"id": 62, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Copa Sul-Americana", "country": "América do Sul", "level": "Profissional", "start": "2026-04-01", "end": "2026-11-30", "scouts": []}, {"id": 63, "group": "AMERICA DO SUL PRO", "subgroup": "Profissional", "name": "Recopa Sul-Americana", "country": "América do Sul", "level": "Profissional", "start": "2026-03-01", "end": "2026-03-31", "scouts": []}, {"id": 64, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Copa Libertadores U20", "country": "Equador", "level": "Base", "start": "2026-03-01", "end": "2026-03-31", "scouts": []}, {"id": 65, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Torneio Sul-Americano U17", "country": "Paraguai", "level": "Base", "start": "2026-04-01", "end": "2026-04-30", "scouts": []}, {"id": 66, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Copa Jovenes Promesas U17", "country": "Argentina", "level": "Base", "start": "2026-02-01", "end": "2026-02-28", "scouts": []}, {"id": 67, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Copa UC U17", "country": "Chile", "level": "Base", "start": "2026-12-01", "end": "2026-12-31", "scouts": []}, {"id": 68, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Torneio AUCAS First U16-U19", "country": "Equador", "level": "Base", "start": "2026-03-01", "end": "2026-03-31", "scouts": []}, {"id": 69, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Torneio AUCAS Second U16-U19", "country": "Equador", "level": "Base", "start": "2026-05-01", "end": "2026-06-30", "scouts": []}, {"id": 70, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Torneio Las Americas U17/U19", "country": "Colômbia", "level": "Base", "start": "2026-10-01", "end": "2026-10-31", "scouts": []}, {"id": 71, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Torneio Pioneros U16", "country": "Uruguai", "level": "Base", "start": "2026-02-01", "end": "2026-02-28", "scouts": []}, {"id": 72, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Copa Por La Paz U18", "country": "Colômbia", "level": "Base", "start": "2026-12-01", "end": "2026-12-31", "scouts": []}, {"id": 73, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Copa Imposible U17", "country": "Colômbia", "level": "Base", "start": "2026-05-01", "end": "2026-05-31", "scouts": []}, {"id": 74, "group": "AMERICA DO SUL BASE", "subgroup": "Seleções Sub", "name": "Torneio Mitad Del Mundo U18", "country": "Equador", "level": "Base", "start": "2026-05-01", "end": "2026-06-30", "scouts": []}, {"id": 75, "group": "AMERICAS MUNDO", "subgroup": "Internacional", "name": "Campeonato Mexicano", "country": "México", "level": "Profissional", "start": "2026-01-01", "end": "2026-12-31", "scouts": []}, {"id": 76, "group": "AMERICAS MUNDO", "subgroup": "Internacional", "name": "Campeonato Mexicano 2a", "country": "México", "level": "Profissional", "start": "2026-01-01", "end": "2026-12-31", "scouts": []}, {"id": 77, "group": "AMERICAS MUNDO", "subgroup": "Internacional", "name": "Major League Soccer", "country": "EUA", "level": "Profissional", "start": "2026-02-01", "end": "2026-12-31", "scouts": []}, {"id": 78, "group": "AMERICAS MUNDO", "subgroup": "Internacional", "name": "Campeonato Português", "country": "Portugal", "level": "Profissional", "start": "2026-08-01", "end": "2026-12-31", "scouts": []}, {"id": 79, "group": "AMERICAS MUNDO", "subgroup": "Internacional", "name": "Campeonato Português 2a", "country": "Portugal", "level": "Profissional", "start": "2026-08-01", "end": "2026-12-31", "scouts": []}, {"id": 80, "group": "AMERICAS MUNDO", "subgroup": "Internacional", "name": "Copa do Mundo", "country": "Internacional", "level": "Profissional", "start": "2026-06-01", "end": "2026-07-31", "scouts": []}, {"id": 81, "group": "AMERICAS MUNDO", "subgroup": "Internacional", "name": "Concacaf U20", "country": "América Central", "level": "Base", "start": "2026-07-01", "end": "2026-08-31", "scouts": []}, {"id": 82, "group": "AMERICAS MUNDO", "subgroup": "Internacional", "name": "Concacaf U17", "country": "América Central", "level": "Base", "start": "2026-02-01", "end": "2026-02-28", "scouts": []}, {"id": 83, "group": "AMERICAS MUNDO", "subgroup": "Internacional", "name": "Mundial U17", "country": "Internacional", "level": "Base", "start": "2026-11-01", "end": "2026-11-30", "scouts": []}, {"id": 84, "group": "AMERICAS MUNDO", "subgroup": "Datas FIFA", "name": "Data FIFA 1", "country": "Internacional", "level": "Profissional", "start": "2026-03-01", "end": "2026-03-31", "scouts": []}, {"id": 85, "group": "AMERICAS MUNDO", "subgroup": "Datas FIFA", "name": "Data FIFA 2", "country": "Internacional", "level": "Profissional", "start": "2026-06-01", "end": "2026-06-30", "scouts": []}, {"id": 86, "group": "AMERICAS MUNDO", "subgroup": "Datas FIFA", "name": "Data FIFA 3", "country": "Internacional", "level": "Profissional", "start": "2026-09-01", "end": "2026-10-31", "scouts": []}, {"id": 87, "group": "AMERICAS MUNDO", "subgroup": "Datas FIFA", "name": "Data FIFA 4", "country": "Internacional", "level": "Profissional", "start": "2026-11-01", "end": "2026-11-30", "scouts": []}, {"id": 88, "group": "AMERICAS MUNDO", "subgroup": "Janelas", "name": "Janela de Transferência 1", "country": "Internacional", "level": "Profissional", "start": "2026-01-05", "end": "2026-03-03", "scouts": []}, {"id": 89, "group": "AMERICAS MUNDO", "subgroup": "Janelas", "name": "Janela de Transferência 2", "country": "Internacional", "level": "Profissional", "start": "2026-07-20", "end": "2026-09-11", "scouts": []}, {"id": 90, "group": "AMERICAS MUNDO", "subgroup": "Janelas", "name": "Janela Transf. Especial", "country": "Internacional", "level": "Profissional", "start": "2026-03-03", "end": "2026-03-27", "scouts": []}];
+let currentView='cal';
+
+function loadData(){
+  try{const s=localStorage.getItem('scout_cal_2026');if(s){const d=JSON.parse(s);d.forEach(c=>{const f=DATA.find(x=>x.id===c.id);if(f){f.scouts=c.scouts||[];f.start=c.start;f.end=c.end;}})}}catch(e){}
+}
+function saveData(){
+  try{localStorage.setItem('scout_cal_2026',JSON.stringify(DATA.map(c=>({id:c.id,scouts:c.scouts,start:c.start,end:c.end}))));}catch(e){}
+  document.getElementById('save-badge').textContent='Salvo';
+}
+
+function isActive(comp,period){
+  if(!comp.start||!comp.end) return false;
+  const cs=new Date(comp.start+' '),ce=new Date(comp.end+' ');
+  return cs<=period.end && ce>=period.start;
+}
+
+function cellColor(comp){
+  const assigned=comp.scouts.filter(s=>s&&s!=='');
+  if(!assigned.length) return null;
+  if(assigned.length>1) return MULTI_COLOR;
+  return SCOUT_COLORS[assigned[0]]?.soft||null;
+}
+
+function renderNav(){
+  const nav=document.getElementById('nav');
+  const views=[{id:'cal',label:'Calendário'},
+    ...SCOUTS.map(s=>({id:'scout_'+s,label:s,color:SCOUT_COLORS[s].btn}))];
+  nav.innerHTML=views.map(v=>`
+    <button class="nav-btn${currentView===v.id?' active':''}"
+      style="background:${v.color||'#3a3835'};color:#fff"
+      onclick="switchView('${v.id}')">${v.label}</button>`).join('');
+}
+
+function switchView(id){currentView=id;renderNav();renderViews();}
+
+function renderViews(){
+  const views=document.getElementById('views');
+  if(currentView==='cal'){views.innerHTML=renderCal();setTimeout(fixStickyTops,10);}
+  else if(currentView==='resumo'){views.innerHTML=renderResumo();setTimeout(fixStickyTops,10);}
+  else{const s=currentView.replace('scout_','');views.innerHTML=renderScoutView(s);setTimeout(fixStickyTops,10);}
+}
+
+function renderCal(){
+  const groups=[...new Set(DATA.map(c=>c.group))];
+  let rows='';
+  groups.forEach(g=>{
+    const cls=GROUP_CLASSES[g]||'';
+    const label=GROUP_LABELS[g]||g;
+    rows+=`<tr class="row-group ${cls}"><td colspan="${4+SCOUTS.length+PERIODS.length}">${label}</td></tr>`;
+    const sgs=[...new Set(DATA.filter(c=>c.group===g).map(c=>c.subgroup))];
+    sgs.forEach(sg=>{
+      rows+=`<tr class="row-sg"><td colspan="${4+SCOUTS.length+PERIODS.length}">${sg}</td></tr>`;
+      DATA.filter(c=>c.group===g&&c.subgroup===sg).forEach(comp=>{
+        const active=PERIODS.map(p=>isActive(comp,p));
+        const assigned=comp.scouts.filter(s=>s&&s!=='');
+        const color=cellColor(comp);
+        const textCol=assigned.length>1?'#fff':(assigned[0]?SCOUT_COLORS[assigned[0]]?.text||'#1a1a18':'#1a1a18');
+        rows+=`<tr class="data" id="row-${comp.id}">
+          <td class="col-name" title="${comp.name}">${comp.name}</td>
+          <td class="col-start"><input class="date-input" type="date" value="${comp.start||''}" onchange="updateDate(${comp.id},'start',this.value)"></td>
+          <td class="col-end"><input class="date-input" type="date" value="${comp.end||''}" onchange="updateDate(${comp.id},'end',this.value)"></td>`;
+        SCOUTS.forEach((s,si)=>{
+          rows+=`<td class="col-s"><select onchange="updateScout(${comp.id},${si},this.value)">
+            <option value="">—</option>
+            ${SCOUTS.map(sc=>`<option value="${sc}"${comp.scouts[si]===sc?' selected':''}>${sc}</option>`).join('')}
+          </select></td>`;
+        });
+        PERIODS.forEach((p,pi)=>{
+          const act=active[pi];
+          const isEnd=(pi+1)%3===0;
+          const bg=act&&color?color:ALT[p.m%2];
+          const fc=act&&color?textCol:'transparent';
+          const initials=assigned.length>1?assigned.map(s=>s[0]).join(''):(assigned[0]?assigned[0][0]:'');
+          rows+=`<td class="period${act?' active':''}${isEnd?' month-end':''}"
+            style="background:${bg};color:${fc}">${act&&assigned.length?initials:act?'·':''}</td>`;
+        });
+        rows+='</tr>';
+      });
+    });
+  });
+
+  const monthHdrs=MONTHS.map((m,mi)=>`<th class="month-hdr" colspan="3">${m}</th>`).join('');
+  const periodHdrs=PERIODS.map((p,pi)=>`<th class="period-hdr${(pi+1)%3===0?' month-end':''}">${p.label}</th>`).join('');
+  const scoutHdrs=SCOUTS.map(s=>`<th class="hdr-col">${s}</th>`).join('');
+
+  return `<div class="view active">
+    <div class="toolbar">
+      <div><h1>Calendário de Cobertura 2026</h1>
+      <p>Edite datas nas colunas B/C · Selecione até 4 scouts · 1 scout = cor do scout · 2+ scouts = preto</p></div>
+      <div class="legend">
+        ${SCOUTS.map(s=>`<span class="leg"><span class="leg-dot" style="background:${SCOUT_COLORS[s].soft}"></span>${s}</span>`).join('')}
+        <span class="leg"><span class="leg-dot" style="background:#2c2c2a"></span>2+ scouts</span>
+        <span class="leg"><span class="leg-dot" style="background:#ccc"></span>Sem scout</span>
+      </div>
+      <span class="save-badge" id="save-badge">Auto-salvo</span>
+    </div>
+    <div class="scroll-wrap">
+    <table class="cal">
+      <thead>
+        <tr>
+          <th class="hdr-name" rowspan="2">Campeonato</th>
+          <th class="hdr-col" rowspan="2">Início</th>
+          <th class="hdr-col" rowspan="2">Fim</th>
+          ${SCOUTS.map((s,i)=>`<th class="hdr-col" rowspan="2" style="background:#484038">Scout ${i+1}</th>`).join('')}
+          ${monthHdrs}
+        </tr>
+        <tr>${periodHdrs}</tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    </div></div>`;
+}
+
+function renderScoutView(scout){
+  const color=SCOUT_COLORS[scout];
+  const assigned=DATA.filter(c=>c.scouts.some(s=>s===scout));
+
+  const monthHdrs=MONTHS.map(m=>`<th class="sv-mhdr" colspan="3">${m}</th>`).join('');
+  const periodHdrs=PERIODS.map((p,pi)=>{
+    const isEnd=(pi+1)%3===0;
+    const lbl=p.p===0?'1':p.p===1?'11':'21';
+    return `<th class="sv-phdr${isEnd?' month-end':''}">${lbl}</th>`;
+  }).join('');
+
+  let bodyRows='';
+  if(!assigned.length){
+    bodyRows=`<tr><td colspan="${4+PERIODS.length}" class="empty-state">Nenhuma competição atribuída a ${scout} ainda. Atribua no Calendário.</td></tr>`;
+  } else {
+    bodyRows=assigned.map((comp,ri)=>{
+      const active=PERIODS.map(p=>isActive(comp,p));
+      const rowbg=ri%2===0?'#fff':'#f9f8f4';
+      const periodCells=PERIODS.map((p,pi)=>{
+        const act=active[pi];
+        const isEnd=(pi+1)%3===0;
+        const bg=act?color.soft:ALT[p.m%2];
+        return `<td style="background:${bg};width:18px;min-width:18px;height:26px;border:0.5px solid #e0ded4${isEnd?';border-right:1.5px solid #b4b2a9':''}"></td>`;
+      }).join('');
+      return `<tr style="background:${rowbg}">
+        <td class="sv-name">${comp.name}</td>
+        <td class="sv-col">${comp.country}</td>
+        <td class="sv-col"><span class="level-${comp.level==='Base'?'base':'pro'}">${comp.level}</span></td>
+        <td class="sv-col sv-dates">${comp.start?comp.start.slice(5).replace('-','/'):'?'} → ${comp.end?comp.end.slice(5).replace('-','/'):'?'}</td>
+        ${periodCells}
+      </tr>`;
+    }).join('');
+  }
+
+  return `<div class="view active">
+    <div class="toolbar">
+      <div style="width:14px;height:14px;border-radius:50%;background:${color.btn};flex-shrink:0"></div>
+      <div><h1>${scout} — Competições Atribuídas 2026</h1>
+      <p>${assigned.length} competição(ões) atribuída(s)</p></div>
+    </div>
+    <div class="scroll-wrap">
+    <table class="cal" style="min-width:800px">
+      <thead>
+        <tr>
+          <th class="hdr-name" rowspan="2" style="min-width:220px">Campeonato</th>
+          <th class="hdr-col" rowspan="2" style="min-width:90px">País</th>
+          <th class="hdr-col" rowspan="2" style="min-width:80px">Nível</th>
+          <th class="hdr-col" rowspan="2" style="min-width:110px">Período</th>
+          ${monthHdrs}
+        </tr>
+        <tr>${periodHdrs}</tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+    </div></div>`;
+}
+
+function renderResumo(){
+  const calcs=SCOUTS.map(scout=>{
+    const months=MONTHS.map((_,mi)=>{
+      const pro=DATA.filter(c=>c.scouts.includes(scout)&&c.level==='Profissional'&&isActiveInMonth(c,mi)).length;
+      const base=DATA.filter(c=>c.scouts.includes(scout)&&c.level==='Base'&&isActiveInMonth(c,mi)).length;
+      return {pro,base};
+    });
+    const totPro=months.reduce((a,m)=>a+m.pro,0);
+    const totBase=months.reduce((a,m)=>a+m.base,0);
+    return {scout,months,totPro,totBase};
+  });
+
+  const monthHdrs=MONTHS.map(m=>`<th class="m-hdr" colspan="2">${m}</th>`).join('');
+  const subHdrs=MONTHS.map(()=>`<th class="sub-hdr">Pro</th><th class="sub-hdr">Base</th>`).join('');
+  
+  const rows=calcs.map(({scout,months,totPro,totBase})=>{
+    const c=SCOUT_COLORS[scout];
+    const monthCells=months.map(m=>
+      `<td class="r-val r-pro">${m.pro||''}</td><td class="r-val r-base">${m.base||''}</td>`).join('');
+    return `<tr>
+      <td class="r-scout" style="background:${c.btn}">${scout}</td>
+      <td class="r-val r-pro r-total">${totPro||''}</td>
+      <td class="r-val r-base r-total">${totBase||''}</td>
+      ${monthCells}
+    </tr>`;
+  }).join('');
+
+  const grandMonths=MONTHS.map((_,mi)=>{
+    const pro=DATA.filter(c=>c.scouts.some(s=>s)&&c.level==='Profissional'&&isActiveInMonth(c,mi)).length;
+    const base=DATA.filter(c=>c.scouts.some(s=>s)&&c.level==='Base'&&isActiveInMonth(c,mi)).length;
+    return `<td class="r-grand">${pro||''}</td><td class="r-grand">${base||''}</td>`;
+  }).join('');
+  const grandPro=calcs.reduce((a,c)=>a+c.totPro,0);
+  const grandBase=calcs.reduce((a,c)=>a+c.totBase,0);
+
+  return `<div class="view active">
+    <div class="toolbar">
+      <div><h1>Resumo de Cobertura — 2026</h1>
+      <p>Scouts nas linhas · Meses nas colunas · Pro = Profissional · Base = Base</p></div>
+    </div>
+    <div class="resumo-wrap">
+    <table class="resumo-table">
+      <thead>
+        <tr>
+          <th rowspan="2" style="background:#2c2c2a;color:#f1efe8">Scout</th>
+          <th colspan="2" style="background:#444441;color:#f1efe8">Total Ano</th>
+          ${monthHdrs}
+        </tr>
+        <tr>
+          <th class="sub-hdr" style="background:#e0ece8;color:#27500a">Pro</th>
+          <th class="sub-hdr" style="background:#d8e8f5;color:#0c447c">Base</th>
+          ${subHdrs}
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+        <tr>
+          <td class="r-grand" style="text-align:left;padding-left:10px">Total Geral</td>
+          <td class="r-grand">${grandPro||''}</td>
+          <td class="r-grand">${grandBase||''}</td>
+          ${grandMonths}
+        </tr>
+      </tbody>
+    </table>
+    </div></div>`;
+}
+
+function isActiveInMonth(comp,monthIdx){
+  if(!comp.start||!comp.end) return false;
+  const cs=new Date(comp.start+' '),ce=new Date(comp.end+' ');
+  const ms=new Date(2026,monthIdx,1),me=new Date(2026,monthIdx+1,0);
+  return cs<=me&&ce>=ms;
+}
+
+function updateScout(id,slot,value){
+  const comp=DATA.find(c=>c.id===id);
+  if(!comp) return;
+  comp.scouts=comp.scouts.slice();
+  while(comp.scouts.length<=slot) comp.scouts.push('');
+  comp.scouts[slot]=value;
+  comp.scouts=comp.scouts.filter((s,i)=>i<=Math.max(...comp.scouts.map((_,i)=>comp.scouts[i]?i:-1)));
+  saveData();
+  renderViews();
+}
+
+function updateDate(id,field,value){
+  const comp=DATA.find(c=>c.id===id);
+  if(comp){comp[field]=value;saveData();renderViews();}
+}
+
+loadData();
+renderNav();
+renderViews();
+
+function fixStickyTops(){
+  const nav=document.querySelector('.nav');
+  const toolbar=document.querySelector('.toolbar');
+  const wrap=document.querySelector('.scroll-wrap');
+  if(!nav||!toolbar||!wrap) return;
+  const navH=nav.getBoundingClientRect().height;
+  const toolH=toolbar.getBoundingClientRect().height;
+  const reserved=navH+toolH;
+  wrap.style.height=(window.innerHeight-reserved)+'px';
+  const firstRow=wrap.querySelector('thead tr:first-child');
+  const rowH=firstRow?firstRow.getBoundingClientRect().height:27;
+  wrap.querySelectorAll('thead tr:first-child th').forEach(el=>el.style.top='0px');
+  wrap.querySelectorAll('thead tr:nth-child(2) th').forEach(el=>el.style.top=rowH+'px');
+  wrap.querySelectorAll('thead tr:first-child .hdr-name').forEach(el=>{el.style.top='0px';el.style.left='0px';});
+}
+window.addEventListener('resize',fixStickyTops);
+setTimeout(fixStickyTops,50);
+</script>
+</body>
+</html>
